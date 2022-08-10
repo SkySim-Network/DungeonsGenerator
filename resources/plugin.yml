@@ -1,0 +1,10 @@
+main: me.kp56.dungeonsgen.DungGenPlugin
+version: 1.0.0
+name: DungeonsGenerator
+author: KP56
+
+depend:
+  - Multiverse-Core
+
+commands:
+  generatedungeon:

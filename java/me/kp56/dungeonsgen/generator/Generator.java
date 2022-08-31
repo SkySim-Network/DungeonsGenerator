@@ -2,6 +2,7 @@ package me.kp56.dungeonsgen.generator;
 
 import com.sk89q.worldedit.WorldEditException;
 import lombok.Getter;
+import me.kp56.dungeonsgen.Dungeon;
 import me.kp56.dungeonsgen.generator.graphs.Graph;
 import me.kp56.dungeonsgen.generator.graphs.traverse.BFS;
 import me.kp56.dungeonsgen.generator.graphs.traverse.ShortestPathFinder;
@@ -33,18 +34,17 @@ public class Generator {
         this.world = world;
     }
 
-    public void generate() {
+    public Dungeon generate() {
         while (true) {
             try {
-                attemptGeneration();
-                break;
+                return attemptGeneration();
             } catch (Exception e) {
 
             }
         }
     }
 
-    private void attemptGeneration() throws IOException, WorldEditException {
+    private Dungeon attemptGeneration() {
         currentStage = GenerationStage.GENERATING_LAYOUT;
 
         int[][] roomLayout = new int[width][height];
@@ -208,6 +208,7 @@ public class Generator {
 
         for (Door door : doors) {
             rooms.get(roomLayout[door.coords1.x][door.coords1.y]).doors.add(door);
+            rooms.get(roomLayout[door.coords2.x][door.coords2.y]).doors.add(door);
         }
 
         /*System.out.println(idsOfWitherRooms);
@@ -219,20 +220,24 @@ public class Generator {
         List<Schematic> loaded = Schematic.getLoadedSchematics();
         for (int i = 0; i < rooms.size(); i++) {
             Room room = rooms.get(i);
-            if (!room.findCorrectSchematic(loaded)) {
-                double generationProgress = i / (double) rooms.size();
+            try {
+                if (!room.findCorrectSchematic(loaded)) {
+                    double generationProgress = i / (double) rooms.size();
 
-                if (progress < generationProgress) {
-                    progress = generationProgress;
-                    System.out.println("Generating a possible dungeon (" + (progress * 100) + "%)");
+                    if (progress < generationProgress) {
+                        progress = generationProgress;
+                        System.out.println("Generating a possible dungeon (" + (progress * 100) + "%)");
+                    }
+
+                    if (room.getRoomType() != Room.RoomType.NORMAL) {
+                        System.out.println("The generator was unable to find a schematic for type=" + room.getRoomType());
+                    }
+
+                    throw new RuntimeException("Could not find any suitable schematic for type=" + room.getRoomType()
+                            + " shape=" + room.shape + ".");
                 }
-
-                if (room.getRoomType() != Room.RoomType.NORMAL) {
-                    System.out.println("The generator was unable to find a schematic for type=" + room.getRoomType());
-                }
-
-                throw new RuntimeException("Could not find any suitable schematic for type=" + room.getRoomType()
-                        + " shape=" + room.shape + ".");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
         System.out.println("Generating a possible dungeon (100%)");
@@ -244,7 +249,9 @@ public class Generator {
         for (Room room : rooms) {
             try {
                 room.paste(world);
-            } catch (WorldEditException e) {
+                System.out.println("Pasted: " + room.getSchematic().file);
+            } catch (WorldEditException | IOException e) {
+                e.printStackTrace();
                 throw new RuntimeException(e);
             }
         }
@@ -252,16 +259,23 @@ public class Generator {
         System.out.println("Pasted all rooms. Pasting doors...");
 
         currentStage = GenerationStage.PASTING_DOORS;
-        for (Door door : doors) {
-            door.paste(door.calculateLocation() , false, door.coords1.x == door.coords2.x);
-        }
+        try {
+            for (Door door : doors) {
+                door.paste(door.calculateLocation(), false, door.coords1.x == door.coords2.x);
+            }
 
-        for (Door door : witherDoors) {
-            door.paste(door.calculateLocation() , true, door.coords1.x == door.coords2.x);
+            for (Door door : witherDoors) {
+                door.paste(door.calculateLocation(), true, door.coords1.x == door.coords2.x);
+            }
+        } catch (IOException | WorldEditException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         System.out.println("Generation has finished!");
         currentStage = GenerationStage.FINISHED;
+
+        return new Dungeon(width, height, world, rooms, roomLayout);
     }
 
     private List<Coordinates> pickStartingBloodFairy(List<Room> rooms, int[][] roomLayout) {

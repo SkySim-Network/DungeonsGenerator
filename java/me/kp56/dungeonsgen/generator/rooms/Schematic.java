@@ -1,7 +1,6 @@
 package me.kp56.dungeonsgen.generator.rooms;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.Files;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.blocks.BaseBlock;
@@ -16,6 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 
 public class Schematic {
@@ -68,10 +68,11 @@ public class Schematic {
             world = schematic.world;
         } else {
             if (filesCached.get(file) == null) {
-                byte[] fileBytes = Files.toByteArray(file);
+                byte[] fileBytes = Files.readAllBytes(file.toPath());
 
                 filesCached.put(file, fileBytes);
             }
+
             Closer closer = Closer.create();
 
             ByteArrayInputStream bais = closer.register(new ByteArrayInputStream(filesCached.get(file)));
@@ -119,6 +120,15 @@ public class Schematic {
 
             for (Pair<BaseBlock, Vector> pair : blocks) {
                 Vector vec = pair.getValue();
+                if (helperArray[vec.getBlockX() - minVec.getBlockX()][vec.getBlockY() - minVec.getBlockY()]
+                        [vec.getBlockZ() - minVec.getBlockZ()] != null) {
+                    System.out.println("DETECTED DUPLICATE BLOCK IN THE SAME LOCATION!!!");
+                    System.out.println("Schematic: " + file);
+                    System.out.println("Rotate around: " + rotateAround);
+                    System.out.println("Rotation: " + rotation);
+                    System.out.println("Segments: " + preEvaluatedSegments);
+                }
+
                 helperArray[vec.getBlockX() - minVec.getBlockX()][vec.getBlockY() - minVec.getBlockY()]
                         [vec.getBlockZ() - minVec.getBlockZ()] = pair.getKey();
             }
@@ -150,9 +160,10 @@ public class Schematic {
 
         for (Pair<BaseBlock, Vector> pair : blocks) {
             Vector vec = pair.getValue();
-            bkWorld.setBlock(pair.getValue().add(vec.getBlockX() + location.getBlockX(),
-                            vec.getBlockY() + location.getBlockY(),
-                            vec.getBlockZ() + location.getBlockZ()),
+            bkWorld.setBlock(vec.add(location.getBlockX(),
+                            location.getBlockY(),
+                            location.getBlockZ())
+                            .subtract(minPoint.setY(0)),
                     pair.getKey());
         }
     }
@@ -192,9 +203,11 @@ public class Schematic {
 
             preEvaluatedSegments = segments;
 
-            return segments;
+            System.out.println("Segments of schematic " + file + " " + segments);
+
+            return new ArrayList<>(segments);
         } else {
-            return preEvaluatedSegments;
+            return new ArrayList<>(preEvaluatedSegments);
         }
     }
 
@@ -239,5 +252,14 @@ public class Schematic {
         }
 
         return new ArrayList<>(allSchematics);
+    }
+
+    @Override
+    public String toString() {
+        return "Schematic{" +
+                "file=" + file +
+                ", rotation=" + rotation +
+                ", rotateAround=" + rotateAround +
+                '}';
     }
 }

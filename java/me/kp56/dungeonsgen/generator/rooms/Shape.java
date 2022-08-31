@@ -77,9 +77,9 @@ public enum Shape {
 
         for (Coordinates coordinate : copy) {
             if (rotateAroundMiddle) {
-                coords.add(new Coordinates((int) (-(coordinate.y - middleY) + middleY), (int) ((coordinate.x - middleX) + middleX)));
+                coords.add(new Coordinates((int) ((coordinate.y - middleY) + middleY), (int) (-(coordinate.x - middleX) + middleX)));
             } else {
-                coords.add(new Coordinates(-coordinate.y, coordinate.x));
+                coords.add(new Coordinates(coordinate.y, -coordinate.x));
             }
         }
 
@@ -88,11 +88,11 @@ public enum Shape {
             Coordinates coords2;
 
             if (rotateAroundMiddle) {
-                coords1 = new Coordinates((int) ((-(door.coords1.y - middleY)) + middleY), (int) ((door.coords1.x - middleX) + middleX));
-                coords2 = new Coordinates((int) ((-(door.coords2.y - middleY)) + middleY), (int) ((door.coords2.x - middleX) + middleX));
+                coords1 = new Coordinates((int) (((door.coords1.y - middleY)) + middleY), (int) (-(door.coords1.x - middleX) + middleX));
+                coords2 = new Coordinates((int) (((door.coords2.y - middleY)) + middleY), (int) (-(door.coords2.x - middleX) + middleX));
             } else {
-                coords1 = new Coordinates(-door.coords1.y, door.coords1.x);
-                coords2 = new Coordinates(-door.coords2.y, door.coords2.x);
+                coords1 = new Coordinates(door.coords1.y, -door.coords1.x);
+                coords2 = new Coordinates(door.coords2.y, -door.coords2.x);
             }
 
             doors.add(new Door(coords1, coords2));

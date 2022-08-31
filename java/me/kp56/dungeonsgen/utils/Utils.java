@@ -66,8 +66,9 @@ public class Utils {
                     Vector minPoint = clipboard.getMinimumPoint();
                     Vector clipboardLoc = new Vector(minPoint.getX() + x, minPoint.getY() + y, minPoint.getZ() + z);
 
-                    Vector pasteLoc = new Vector(x, y, z).add(new Vector(location.getX(), location.getY(), location.getZ()));
+                    Vector pasteLoc = new Vector(x, y, z);
                     pasteLoc = rotateAroundPoint(pasteLoc, rotateAround, rotation);
+                    pasteLoc = pasteLoc.add(new Vector(location.getX(), location.getY(), location.getZ()));
 
                     BaseBlock block = clipboard.getBlock(clipboardLoc);
                     if (block.getId() != 0) {

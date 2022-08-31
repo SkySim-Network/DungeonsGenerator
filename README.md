@@ -26,5 +26,5 @@ which clarifies the fact that the generation has finished.
 
 In case of the generator being unable to generate a proper layout or
 find schematics matching the rooms, the generation will be restarted.
-The generation function, without taking into accounting a need
-to restart the generation, has a time complexity of O(n^2).
+The generation function has a time complexity of O(t * w * h)
+where t = the number of attempts, w = width, h = height.

@@ -1,5 +1,6 @@
 package me.kp56.dungeonsgen;
 
+import com.avaje.ebean.validation.Past;
 import com.onarandombox.MultiverseCore.MultiverseCore;
 import com.sk89q.jnbt.NBTOutputStream;
 import com.sk89q.worldedit.Vector;
@@ -14,6 +15,7 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.util.io.Closer;
 import lombok.Getter;
 import me.kp56.dungeonsgen.commands.GenerateDungeon;
+import me.kp56.dungeonsgen.commands.PasteTest;
 import me.kp56.dungeonsgen.generator.rooms.Schematic;
 import me.kp56.dungeonsgen.listeners.PlayerListener;
 import org.apache.commons.lang3.tuple.Pair;
@@ -22,7 +24,6 @@ import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
-import java.util.zip.GZIPOutputStream;
 
 public class DungGenPlugin extends JavaPlugin {
     @Getter
@@ -33,11 +34,14 @@ public class DungGenPlugin extends JavaPlugin {
     @Getter
     private World dungeonWorld;
 
+    public Dungeon dungeon;
+
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
 
         getCommand("generatedungeon").setExecutor(new GenerateDungeon());
+        getCommand("pastetest").setExecutor(new PasteTest());
 
         core = (MultiverseCore) Bukkit.getServer().getPluginManager().getPlugin("Multiverse-Core");
 

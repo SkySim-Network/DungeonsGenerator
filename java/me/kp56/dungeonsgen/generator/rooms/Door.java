@@ -30,7 +30,7 @@ public class Door {
         if (isWither) toPaste = WITHER_DOORS;
 
         toPaste.load(new Vector(), 0);
-        toPaste.load(new Vector(WITHER_DOORS.getWidth() / 2 + 1, 0, WITHER_DOORS.getLength() / 2 + 1),
+        toPaste.load(new Vector(WITHER_DOORS.getWidth() / 2, 0, WITHER_DOORS.getLength() / 2),
                 isRotated ? 90 : 0);
         toPaste.paste(location);
     }

@@ -12,10 +12,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Room {
@@ -138,11 +135,14 @@ public class Room {
                         }
 
                         Rotation schemRot = Rotation.NO_ROTATION;
-                        //we need to rotate schematic until schemRot == rotation
-                        while (!schemsCoords.stream().map((c) -> new Coordinates(c.x + min.x, c.y + min.y))
-                                .collect(Collectors.toList())
-                                .equals(segments)) {
+                        while (!new HashSet<>(schemsCoords.stream().map((c) -> new Coordinates(c.x + min.x, c.y + min.y))
+                                .collect(Collectors.toList()))
+                                .containsAll(segments)) {
                             //here we rotate the schematic
+                            System.out.println("Rotating:");
+                            System.out.println("SchemCoords: " + schemsCoords);
+                            System.out.println("Segments: " + segments);
+
                             schemShape.rotateBy90Degrees(schemsCoords, schemDoors);
                             schemRot = Rotation.values()[(Arrays.asList(Rotation.values()).indexOf(schemRot) + 1) % Rotation.values().length];
                         }
@@ -156,7 +156,7 @@ public class Room {
                         }
 
                         schematic.load(schemShape.isRotateAroundMiddle() ?
-                                        new Vector(schematic.getWidth() / 2 + 1, 0, schematic.getLength() / 2 + 1) :
+                                        new Vector(schematic.getWidth() / 2, 0, schematic.getLength() / 2) :
                                         new Vector(15, 0, 15),
                                 schemRot.rotation);
 
@@ -185,7 +185,24 @@ public class Room {
     }
 
     public void paste(World world) throws WorldEditException, IOException {
-        schematic.paste(new Location(world, segments.get(0).x * 32, 0, segments.get(0).y * 32));
+        Coordinates minCoords = new Coordinates(Integer.MAX_VALUE, Integer.MAX_VALUE);
+        for (Coordinates coordinates : segments) {
+            minCoords = new Coordinates(Math.min(coordinates.x, minCoords.x), Math.min(coordinates.y, minCoords.y));
+        }
+
+        schematic.paste(new Location(world, minCoords.x * 32, 0, minCoords.y * 32));
+    }
+
+    @Override
+    public String toString() {
+        return "Room{" +
+                "segments=" + segments +
+                ", shape=" + shape +
+                ", rotation=" + rotation +
+                ", schematic=" + schematic +
+                ", roomType=" + roomType +
+                ", doors=" + doors +
+                '}';
     }
 
     public static enum RoomType {

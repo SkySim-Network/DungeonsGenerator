@@ -97,6 +97,8 @@ public class Generator {
 
         currentStage = GenerationStage.CREATING_WITHER_DOORS;
         List<Door> witherDoors = new ArrayList<>();
+        /*TODO: fix ordering of wither rooms by switching to LinkedHashSet, make sure that paths from blood to fairy
+        * and starting room to fairy don't contain the same rooms by passing the visited arraylist */
         Set<Integer> idsOfWitherRooms = new HashSet<>();
 
         List<Room> finalRooms = rooms;
@@ -124,8 +126,8 @@ public class Generator {
         BFS findFromStartToFairy = new BFS(fromArr, new ShortestPathFinder(roomLayout[fairyRoom.x][fairyRoom.y],
                 witherDoorsFound), roomLayout[startingRoom.x][startingRoom.y]);
 
-        BFS findFromBloodToFairy = new BFS(fromArr, new ShortestPathFinder(roomLayout[fairyRoom.x][fairyRoom.y],
-                witherDoorsFound), roomLayout[bloodRoom.x][bloodRoom.y]);
+        BFS findFromBloodToFairy = new BFS(fromArr, new ShortestPathFinder(roomLayout[bloodRoom.x][bloodRoom.y],
+                witherDoorsFound), roomLayout[fairyRoom.x][fairyRoom.y]);
 
         findFromStartToFairy.traverse();
         findFromBloodToFairy.traverse();
@@ -211,9 +213,14 @@ public class Generator {
             rooms.get(roomLayout[door.coords2.x][door.coords2.y]).doors.add(door);
         }
 
-        /*System.out.println(idsOfWitherRooms);
+        System.out.println("Blood room: " + bloodRoom);
+        System.out.println("Starting room: " + startingRoom);
+        System.out.println(idsOfWitherRooms);
         System.out.println(Arrays.deepToString(roomLayout));
-        System.out.println(doors);*/
+        System.out.println(doors);
+
+        if (doors.isEmpty())
+            throw new RuntimeException("Doors could not get generated.");
 
         currentStage = GenerationStage.CHOOSING_ROOMS;
 
@@ -346,30 +353,24 @@ public class Generator {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 if (roomLayout[x][y] == -1) {
-                    int finalX = x;
-                    int finalY = y;
-
-                    AtomicBoolean generated = new AtomicBoolean(true);
-                    Utils.possibleEvents(() -> {
+                    int option = (int) (10 * Math.random());
+                    if (option == 0) {
                         //1x1 room
-                        Room oneByOne = new Room(finalX, finalY, Shape.ONE_BY_ONE, Rotation.NO_ROTATION);
+                        Room oneByOne = new Room(x, y, Shape.ONE_BY_ONE, Rotation.NO_ROTATION);
                         rooms.add(oneByOne);
 
                         placeRoom(currentRoomID.getAndIncrement(), oneByOne.getSegments(), roomLayout);
-                    }, () -> {
+                    } else if (option >= 1 && option <= 4) {
                         //2x1, 3x1, 4x1 rooms
-                        if (!attemptWithOneRotation(currentRoomID, finalX, finalY, rooms, roomLayout, Shape.values()[(int) (Math.random() * 3) + 1])) {
-                            generated.set(false);
+                        if (!attemptWithOneRotation(currentRoomID, x, y, rooms, roomLayout, Shape.values()[(int) (Math.random() * 3) + 1])) {
+                            return false;
                         }
-                    }, () -> {
+                    } else {
                         //2x2, L-shaped rooms
-                        if (!attemptWithAllRotations(currentRoomID, finalX, finalY, rooms, roomLayout, Shape.values()[(int) (Math.random() * 2) + 4])) {
-                            generated.set(false);
+                        if (!attemptWithAllRotations(currentRoomID, x, y, rooms, roomLayout, Shape.values()[(int) (Math.random() * 2) + 4])) {
+                            return false;
                         }
-                    });
-
-                    if (!generated.get())
-                        return false;
+                    }
                 }
             }
         }

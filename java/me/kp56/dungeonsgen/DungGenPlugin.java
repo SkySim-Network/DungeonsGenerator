@@ -45,7 +45,7 @@ public class DungGenPlugin extends JavaPlugin {
 
         core = (MultiverseCore) Bukkit.getServer().getPluginManager().getPlugin("Multiverse-Core");
 
-        File[] dirs = new File[] {
+        File[] dirs = new File[]{
                 new File("plugins/dungeonsgen"),
                 new File("plugins/dungeonsgen/roomschematics"),
         };
@@ -65,7 +65,7 @@ public class DungGenPlugin extends JavaPlugin {
                 Vector foundSign = schematic.getMinPoint();
                 for (Pair<BaseBlock, Vector> pair : schematic.getBlocks()) {
                     if (pair.getKey().getNbtData() != null) {
-                        if (pair.getKey().getNbtData().getString("Text1").equals("{\"extra\":[\"Door::this\"],\"text\":\"\"}")) {
+                        if (pair.getKey().getNbtData().getString("Text1").equalsIgnoreCase("{\"extra\":[\"door::this\"],\"text\":\"\"}")) {
                             foundSign = pair.getValue();
                         }
                     }
@@ -80,18 +80,18 @@ public class DungGenPlugin extends JavaPlugin {
 
                     BukkitWorld world = new BukkitWorld(dungeonWorld);
                     BlockArrayClipboard blockArrayClipboard = new BlockArrayClipboard(new CuboidRegion(world,
-                            new Vector(schematic.getMinPoint().getBlockX(), schematic.getMinPoint().getBlockY(), schematic.getMinPoint().getBlockZ()),
+                            new Vector(schematic.getMinPoint().getBlockX(), schematic.getMinPoint().getBlockY() + increaseBy, schematic.getMinPoint().getBlockZ()),
                             new Vector(schematic.getMaxPoint().getBlockX(), schematic.getMaxPoint().getBlockY() + increaseBy, schematic.getMaxPoint().getBlockZ())));
 
                     for (Pair<BaseBlock, Vector> pair : schematic.getBlocks()) {
-                        if (!pair.getKey().isAir()) {
-                            Vector newVector = new Vector(pair.getValue().getX(), pair.getValue().getY() + increaseBy,
-                                    pair.getValue().getZ());
+                        Vector newVector = new Vector(pair.getValue().getX(), pair.getValue().getY() + increaseBy,
+                                pair.getValue().getZ());
 
-                            //I need to save a new schematic with the block pair.getKey() and its location in newVector
-                            if (!blockArrayClipboard.setBlock(newVector, pair.getKey())) {
-                                System.out.println("Hmm something doesn't quite work... IDK WHY...");
-                            }
+                        //I need to save a new schematic with the block pair.getKey() and its location in newVector
+                        if (!blockArrayClipboard.setBlock(newVector, pair.getKey())) {
+                            System.out.println("There is a problem with World Edit regions in schematic: " + schematic.file);
+                            System.out.println("Tried to paste block at position: " + newVector + " minPoint: "
+                                    + blockArrayClipboard.getMinimumPoint() + " maxPoint: " + blockArrayClipboard.getMaximumPoint());
                         }
                     }
 

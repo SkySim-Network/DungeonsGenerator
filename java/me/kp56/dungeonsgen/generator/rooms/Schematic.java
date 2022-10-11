@@ -29,6 +29,7 @@ public class Schematic {
     @Getter
     private boolean isLoaded = false;
     private List<Coordinates> preEvaluatedSegments;
+    private List<Door> preEvaluatedDoors;
 
     private BaseBlock[][][] helperArray;
 
@@ -64,6 +65,7 @@ public class Schematic {
             maxPoint = schematic.maxPoint;
             isLoaded = schematic.isLoaded;
             preEvaluatedSegments = schematic.preEvaluatedSegments;
+            preEvaluatedDoors = schematic.preEvaluatedDoors;
             helperArray = schematic.helperArray;
             world = schematic.world;
         } else {
@@ -208,6 +210,55 @@ public class Schematic {
             return new ArrayList<>(segments);
         } else {
             return new ArrayList<>(preEvaluatedSegments);
+        }
+    }
+
+    public List<Door> evaluateDoors() {
+        if (preEvaluatedDoors == null) {
+            List<Door> schemDoors = new ArrayList<>();
+
+            //find doors
+            for (Pair<BaseBlock, Vector> pair : getBlocks()) {
+                BaseBlock block = pair.getKey();
+                Vector location = pair.getValue().subtract(getMinPoint());
+
+                if (block.getNbtData() != null) {
+                    if (block.getNbtData().getString("Text1").equalsIgnoreCase("{\"extra\":[\"door::this\"],\"text\":\"\"}")) {
+                        int x1 = location.getBlockX() / 32;
+                        int y1 = location.getBlockZ() / 32;
+
+                        int relX = location.getBlockX() - x1 * 32;
+                        int relY = location.getBlockZ() - y1 * 32;
+
+                        int x2;
+                        int y2;
+                        if (relX == 15) {
+                            x2 = x1;
+                            y2 = relY < 16 ? y1 - 1 : y1 + 1;
+                        } else if (relY == 15) {
+                            y2 = y1;
+                            x2 = relX < 16 ? x1 - 1 : x1 + 1;
+                        } else {
+                            System.out.println("Schematic " + file.getName() + " has an invalid door place " + location);
+                            System.out.println("Min point: " + getMinPoint());
+                            System.out.println("Max point: " + getMaxPoint());
+                            System.out.println("Schematic's rotation: " + getRotation());
+                            System.out.println("Schematic is rotated around: " + getRotateAround());
+
+                            throw new RuntimeException("Found an invalid door in the schematic.");
+                        }
+
+                        schemDoors.add(new Door(new Coordinates(x1, y1), new Coordinates(x2, y2)));
+                    }
+                }
+            }
+
+            preEvaluatedDoors = schemDoors;
+
+            System.out.println("Doors of schematic " + file + " " + schemDoors);
+            return new ArrayList<>(schemDoors);
+        } else {
+            return new ArrayList<>(preEvaluatedDoors);
         }
     }
 

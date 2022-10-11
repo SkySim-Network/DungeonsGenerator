@@ -50,9 +50,7 @@ public class Room {
     }
 
     public void setRoomType(RoomType roomType) {
-        if (this.roomType == null) {
-            this.roomType = roomType;
-        }
+        this.roomType = roomType;
     }
 
     public Coordinates findSegmentConnectedTo(Room room, Coordinates evaluatedSegment) {
@@ -96,61 +94,55 @@ public class Room {
 
                     //if shape matches
                     if (shape == schemShape) {
-                        List<Door> schemDoors = new ArrayList<>();
-
-                        //find doors
-                        for (Pair<BaseBlock, Vector> pair : schematic.getBlocks()) {
-                            BaseBlock block = pair.getKey();
-                            Vector location = pair.getValue().subtract(schematic.getMinPoint());
-
-                            if (block.getNbtData() != null) {
-                                if (block.getNbtData().getString("Text1").toLowerCase(Locale.ROOT).equals("{\"extra\":[\"door::this\"],\"text\":\"\"}")) {
-                                    int x1 = location.getBlockX() / 32;
-                                    int y1 = location.getBlockZ() / 32;
-
-                                    int relX = location.getBlockX() - x1 * 32;
-                                    int relY = location.getBlockZ() - y1 * 32;
-
-                                    int x2;
-                                    int y2;
-                                    if (relX == 15) {
-                                        x2 = x1;
-                                        y2 = relY < 16 ? y1 - 1 : y1 + 1;
-                                    } else if (relY == 15) {
-                                        y2 = y1;
-                                        x2 = relX < 16 ? x1 - 1 : x1 + 1;
-                                    } else {
-                                        System.out.println("Schematic " + schematic.file.getName() + " has an invalid door place " + location);
-                                        System.out.println("Min point: " + schematic.getMinPoint());
-                                        System.out.println("Max point: " + schematic.getMaxPoint());
-                                        System.out.println("Schematic's rotation: " + schematic.getRotation());
-                                        System.out.println("Schematic is rotated around: " + schematic.getRotateAround());
-
-                                        throw new RuntimeException("Found an invalid door in the schematic.");
-                                    }
-
-                                    schemDoors.add(new Door(new Coordinates(x1, y1), new Coordinates(x2, y2)));
-                                }
-                            }
-                        }
+                        List<Door> schemDoors = schematic.evaluateDoors();
 
                         Rotation schemRot = Rotation.NO_ROTATION;
                         while (!new HashSet<>(schemsCoords.stream().map((c) -> new Coordinates(c.x + min.x, c.y + min.y))
                                 .collect(Collectors.toList()))
                                 .containsAll(segments)) {
                             //here we rotate the schematic
-                            System.out.println("Rotating:");
+                            /*System.out.println("Rotating:");
                             System.out.println("SchemCoords: " + schemsCoords);
-                            System.out.println("Segments: " + segments);
+                            System.out.println("Segments: " + segments);*/
 
                             schemShape.rotateBy90Degrees(schemsCoords, schemDoors);
                             schemRot = Rotation.values()[(Arrays.asList(Rotation.values()).indexOf(schemRot) + 1) % Rotation.values().length];
                         }
 
+                        if (schemsCoords.size() == 1) {
+                            //for 1x1 rooms we want to rotate until the doors match (if they ever do)
+                            //this should speed up the generation process as we won't be discarding dungeons
+                            //just because 1x1 rooms aren't rotated properly
+                            boolean doorsDidMatch = false;
+                            rotation1x1Loop:
+                            for (int j = 0; j < 4; j++) {
+                                for (Door door : doors) {
+                                    if (schemDoors.stream().noneMatch((d) -> door.equals(
+                                            new Door(new Coordinates(d.coords1.x + min.x, d.coords1.y + min.y),
+                                                    new Coordinates(d.coords2.x + min.x, d.coords2.y + min.y))))) {
+                                        schemShape.rotateBy90Degrees(schemsCoords, schemDoors);
+                                        schemRot = Rotation.values()[(Arrays.asList(Rotation.values()).indexOf(schemRot) + 1) % Rotation.values().length];
+                                        continue rotation1x1Loop;
+                                    }
+                                }
+
+                                //if all doors matched and we didn't skip
+                                doorsDidMatch = true;
+                                break;
+                            }
+
+                            if (!doorsDidMatch) {
+                                System.out.println("Non of the doors: " + schemDoors + " matched the doors: " + doors + " even after rotating multiple times");
+                                continue schematicLoop;
+                            }
+                        }
+
+                        System.out.println("Min of the room is: " + min);
                         for (Door door : doors) {
                             if (schemDoors.stream().noneMatch((d) -> door.equals(
                                     new Door(new Coordinates(d.coords1.x + min.x, d.coords1.y + min.y),
                                             new Coordinates(d.coords2.x + min.x, d.coords2.y + min.y))))) {
+                                System.out.println("Non of the doors: " + schemDoors + " match the door: " + door);
                                 continue schematicLoop;
                             }
                         }

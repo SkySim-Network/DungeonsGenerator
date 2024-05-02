@@ -2,6 +2,8 @@
 A simple generator for Hypixel SkyBlock-like dungeons.
 Made for: mc.skysim.sbs
 
+**THIS IS NOT THE ONE BEING USED RIGHT NOW IN SKYSIM NETWORK!**
+
 The generation process is divided into 8 different phases:
 - Generating layout - the generator generates a 2-dimensional integer
 array representing a room layout of a dungeon. Each cell contains
